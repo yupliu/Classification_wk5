@@ -45,3 +45,36 @@ loans, loans_with_na = loans[[target] + features].dropna_split()
 num_rows_with_na = loans_with_na.num_rows()
 num_rows = loans.num_rows()
 print 'Dropping %s observations; keeping %s ' % (num_rows_with_na, num_rows)
+
+safe_loans_raw = loans[loans[target] == 1]
+risky_loans_raw = loans[loans[target] == -1]
+
+# Undersample the safe loans.
+percentage = len(risky_loans_raw)/float(len(safe_loans_raw))
+safe_loans = safe_loans_raw.sample(percentage, seed = 1)
+risky_loans = risky_loans_raw
+loans_data = risky_loans.append(safe_loans)
+
+print "Percentage of safe loans                 :", len(safe_loans) / float(len(loans_data))
+print "Percentage of risky loans                :", len(risky_loans) / float(len(loans_data))
+print "Total number of loans in our new dataset :", len(loans_data)
+
+train_data, validation_data = loans_data.random_split(.8, seed=1)
+model_5 = graphlab.boosted_trees_classifier.create(train_data, validation_set=None, 
+        target = target, features = features, max_iterations = 5)
+# Select all positive and negative examples.
+validation_safe_loans = validation_data[validation_data[target] == 1]
+validation_risky_loans = validation_data[validation_data[target] == -1]
+
+# Select 2 examples from the validation set for positive & negative loans
+sample_validation_data_risky = validation_risky_loans[0:2]
+sample_validation_data_safe = validation_safe_loans[0:2]
+
+# Append the 4 examples into a single dataset
+sample_validation_data = sample_validation_data_safe.append(sample_validation_data_risky)
+sample_validation_data
+pred = model_5.predict(sample_validation_data)
+pred_prob = model_5.predict(sample_validation_data,output_type='probability')
+model_5.evaluate
+
+
