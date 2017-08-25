@@ -8,7 +8,8 @@ try:
 except ImportError:
     pass
 
-loans = graphlab.SFrame('C:\\Machine_Learning\\Classification_wk5\\lending-club-data.gl\\')
+#loans = graphlab.SFrame('C:\\Machine_Learning\\Classification_wk5\\lending-club-data.gl\\')
+loans = graphlab.SFrame('D:\\ML_Learning\\UW_Classification\\week5\\lending-club-data.gl\\')
 loans.column_names()
 loans['safe_loans'] = loans['bad_loans'].apply(lambda x : +1 if x==0 else -1)
 loans = loans.remove_column('bad_loans')
@@ -75,6 +76,77 @@ sample_validation_data = sample_validation_data_safe.append(sample_validation_da
 sample_validation_data
 pred = model_5.predict(sample_validation_data)
 pred_prob = model_5.predict(sample_validation_data,output_type='probability')
-model_5.evaluate
+model_5.evaluate(validation_data)
 
+fp = 1618
+fn = 1463
+cost = 10000*1463 + 20000*1618
+print cost
+
+validation_data['predictions'] = model_5.predict(validation_data,output_type='probability')
+
+print "Your loans      : %s\n" % validation_data['predictions'].head(4)
+print "Expected answer : %s" % [0.4492515948736132, 0.6119100103640573,
+                                0.3835981314851436, 0.3693306705994325]
+validation_most_positive = validation_data.sort('predictions',ascending=False)
+validation_most_negative= validation_data.sort('predictions',ascending=True)
+
+model_10 = graphlab.boosted_trees_classifier.create(train_data, validation_set=None,target = target, features = features, max_iterations = 10, verbose=False)
+model_50 = graphlab.boosted_trees_classifier.create(train_data, validation_set=None,target = target, features = features, max_iterations = 50, verbose=False)
+model_100 = graphlab.boosted_trees_classifier.create(train_data, validation_set=None,target = target, features = features, max_iterations = 100, verbose=False)
+model_200 = graphlab.boosted_trees_classifier.create(train_data, validation_set=None,target = target, features = features, max_iterations = 200, verbose=False)
+model_500 = graphlab.boosted_trees_classifier.create(train_data, validation_set=None,target = target, features = features, max_iterations = 500, verbose=False)
+#evalation models
+model_10.evaluate(validation_data)
+model_50.evaluate(validation_data)
+model_100.evaluate(validation_data)
+model_200.evaluate(validation_data)
+model_500.evaluate(validation_data)
+
+
+import matplotlib.pyplot as plt
+def make_figure(dim, title, xlabel, ylabel, legend):
+    plt.rcParams['figure.figsize'] = dim
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    if legend is not None:
+        plt.legend(loc=legend, prop={'size':15})
+    plt.rcParams.update({'font.size': 16})
+    plt.tight_layout()
+
+training_errors = []
+
+training_errors.append( 1. - model_10.training_accuracy)
+training_errors.append( 1. -model_50.training_accuracy)
+training_errors.append( 1. -model_100.training_accuracy)
+training_errors.append( 1. -model_200.training_accuracy)
+training_errors.append( 1. -model_500.training_accuracy)
+
+
+validation_errors = []
+#evalation models
+model10_val = model_10.evaluate(validation_data)
+model50_val = model_50.evaluate(validation_data)
+model100_val = model_100.evaluate(validation_data)
+model200_val = model_200.evaluate(validation_data)
+model500_val = model_500.evaluate(validation_data)
+validation_errors.append(1. - model10_val['accuracy'])
+validation_errors.append(1. - model50_val['accuracy'])
+validation_errors.append(1. - model100_val['accuracy'])
+validation_errors.append(1. - model200_val['accuracy'])
+validation_errors.append(1. - model500_val['accuracy'])
+
+plt.plot([10, 50, 100, 200, 500], training_errors, linewidth=4.0, label='Training error')
+plt.plot([10, 50, 100, 200, 500], validation_errors, linewidth=4.0, label='Validation error')
+
+make_figure(dim=(10,5), title='Error vs number of trees',
+            xlabel='Number of trees',
+            ylabel='Classification error',
+            legend='best')
+plt.show()
+plt.close()
+
+print training_errors
+print validation_errors
 
